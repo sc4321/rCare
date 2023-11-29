@@ -9,9 +9,9 @@ import pathlib
 import threading
 
 
-ALLOWED_FILE_COUNT = 20 # WAS 1980
-CLIP_IMAGE_LEN = 15     # was 300
-FILE_COUNT_HYSTERESIS = 10
+ALLOWED_FILE_COUNT = 1980 
+CLIP_IMAGE_LEN = 300
+FILE_COUNT_HYSTERESIS = 50
 
 C_font = cv2.FONT_HERSHEY_SIMPLEX
 C_bottomLeftCornerOfText = (30, 30)

@@ -34,6 +34,26 @@ config = {
 firebase_db_Inst = FirebaseDB(config, "shlomocohen2@gmail.com", "ZCBMnvx1!")
 
 
+def downsize_and_gray_image(image,factor):
+    # Check if the image is loaded successfully
+    if image is not None:
+        # Get the original width and height
+        original_width, original_height = image.shape[1], image.shape[0]
+
+        # Calculate new width and height as half of the original dimensions
+        new_width = int(original_width / factor)  # was 2
+        new_height = int(original_height / factor) # was 2
+
+        # Resize the image
+        resized_image = cv2.resize(image, (new_width, new_height))
+
+        # Convert the resized image to grayscale
+        grayscale_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
+        return grayscale_image
+    else:
+        print ("Image to downsize empty")
+        return None
+
 def detect_person(frame):
     # Make a prediction
     detections = model(frame)
@@ -64,13 +84,11 @@ while True:
     filtered_detections = detect_person(frame)
 
     # If no detections were found, rotate the image and try again
-    '''
+
     if len(filtered_detections) == 0:
         frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         filtered_detections = detect_person(frame)
-    '''
 
-    '''
     if len(filtered_detections) == 0:
         frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
@@ -78,7 +96,7 @@ while True:
         #no persons found in 3 direction
         if len(filtered_detections) == 0:
             continue    
-    '''
+
     # Draw bounding boxes around the filtered detections
     for detection in filtered_detections:
         confidence_score = detection[1]
@@ -94,7 +112,6 @@ while True:
 
         # Draw a rectangle around the detection
         cv2.rectangle(frame, (top_left_x, top_left_y), (bottom_right_x, bottom_right_y), (255, 255, 255), 2)
-        #cv2.rectangle(frame, (top_left_x, top_left_y), (bottom_right_x, bottom_right_y), (0, 0, 0), -1)
 
         # Print the confidence score of the detection over the screen
         cv2.putText(frame, f"{confidence_score:.2f}", (top_left_x, top_left_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
@@ -102,14 +119,23 @@ while True:
     # if needs to record frame, send to dedicated thread
     if True:
         # append image to clip
+        #frame_grey = downsize_and_gray_image(frame, 2) # not creating a video that can be opened
         t_writer = threading.Thread(target=videoClipsHandlerInst.thread_write_frame_out(frame))
 
     image_counter += 1
+    if image_counter > 50:
+        image_counter = 1
     img_name = str(image_counter)+'.jpg'
-    firebase_db_Inst.firebase_admin_upload_np_image_to_storage(frame, img_name)
+
+    # Mask person appearance
+    cv2.rectangle(frame, (top_left_x, top_left_y), (bottom_right_x, bottom_right_y), (0, 0, 0), -1)
+    frame_grey = downsize_and_gray_image(frame,4)
+    t_writer = threading.Thread(target=firebase_db_Inst.firebase_admin_upload_np_image_to_storage(frame_grey, img_name))
+
 
     # Display the frame
     cv2.imshow("Frame", frame)
+    #cv2.imshow("frame_grey", frame_grey)
 
     # Check for the "q" key to quit the loop
     if cv2.waitKey(1) & 0xFF == ord("q"):
