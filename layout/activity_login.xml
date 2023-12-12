@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+
+    tools:context=".LoginActivity">
+    <!-- android:background="@drawable/register_background" -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:text="Login"
+        android:textAlignment="center"
+        android:textColor="#000"
+        android:paddingVertical="70dp"
+        android:textSize="30dp"
+        android:fontFamily="cursive"
+        android:background="@drawable/image"
+        android:layout_marginBottom="15dp"
+        />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Email address:"
+        android:layout_marginHorizontal="30dp"
+
+        />
+    <!-- android:textColor="@color/colorAccent" -->
+
+    <EditText
+        android:id="@+id/gmailEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="30dp"
+        android:layout_marginBottom="15dp"
+        android:hint="Email address" />
+
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Password:"
+        android:layout_marginHorizontal="30dp"
+
+        />
+    <!-- android:textColor="@color/colorAccent" -->
+
+    <EditText
+        android:id="@+id/passwordEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="30dp"
+        android:layout_marginBottom="70dp"
+        android:hint="Password"
+        android:inputType="textPassword" />
+
+    <Button
+        android:id="@+id/loginButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="30dp"
+        android:layout_marginBottom="30dp"
+        android:text="Login" />
+
+</LinearLayout>
