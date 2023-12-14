@@ -54,14 +54,11 @@ public class LoginActivity extends AppCompatActivity {
 
     private void initializeFields() {
 
-        emailEditText = (EditText) findViewById(R.id.gmailEditText);
-        passwordEditText = (EditText) findViewById(R.id.passwordEditText);
-        loginButton = (Button) findViewById(R.id.loginButton);
+        emailEditText = findViewById(R.id.gmailEditText);
+        passwordEditText = findViewById(R.id.passwordEditText);
+        loginButton = findViewById(R.id.loginButton);
 
         loadingBar = new ProgressDialog(this);
-
-        emailEditText.setText("binyaminc6@gmail.com");
-        passwordEditText.setText("123456");
     }
 
     public void sendUserToMainActivity() {
@@ -70,13 +67,11 @@ public class LoginActivity extends AppCompatActivity {
         finish();
     }
 
-
-
-    public void afterSuccessfulLogin() { //this function is called from IDatabaseWithAuth.login
+    public void afterSuccessfulLogin() { //this function is called from myFirebaseDatabase.login
         loadingBar.dismiss();
         sendUserToMainActivity();
     }
-    public void afterFailedLogin(String errorMessage) { //this function is called from IDatabaseWithAuth.login
+    public void afterFailedLogin(String errorMessage) { //this function is called from myFirebaseDatabase.login
         loadingBar.dismiss();
         Toast.makeText(getApplicationContext(), errorMessage, Toast.LENGTH_LONG).show();
     }
