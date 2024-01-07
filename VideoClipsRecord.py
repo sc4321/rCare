@@ -9,15 +9,15 @@ import pathlib
 import threading
 
 
-ALLOWED_FILE_COUNT = 1980 
+ALLOWED_FILE_COUNT = 1980
 CLIP_IMAGE_LEN = 300
 FILE_COUNT_HYSTERESIS = 50
 
 C_font = cv2.FONT_HERSHEY_SIMPLEX
-C_bottomLeftCornerOfText = (30, 30)
-C_fontScale = 1
+C_bottomLeftCornerOfText = (40, 40)
+C_fontScale = 1.3
 C_fontColor = (255, 255, 255)
-C_thickness = 2
+C_thickness = 3
 C_lineType = 2
 
 
@@ -37,7 +37,7 @@ class videoClipsHandler:
         self.fourcc = cv2.VideoWriter_fourcc(*"MJPG")
         self.img_size_h, self.img_size_w, self.rgb = 480, 640, 3  # img.shape
         self.size = (self.img_size_w, self.img_size_h)
-        self.fps = 7  # fps ( = Frames per second)
+        self.fps = 5  # fps ( = Frames per second)
 
         self.is_running = False
         self.worker_thread = None
@@ -130,6 +130,7 @@ class videoClipsHandler:
             self.V_Clip_images_counter = 0
 
         # anyway print time on new received image
+        '''
         cv2.putText(img, date_time_str,
                     bottomLeftCornerOfText,
                     font,
@@ -137,6 +138,7 @@ class videoClipsHandler:
                     fontColor,
                     thickness,
                     lineType)
+        '''
 
         try:
             self.vid_out.write(img)
