@@ -43,7 +43,7 @@ file1 = open('config.txt', 'r')
 Lines = file1.readlines()
 count = 0
 show_on_screen = 0  # don't show
-video_dir = r"D:\videos\\"
+video_dir = r"C:\projects\check_clips_records\\"
 firebase_queue_len = 50  # default
 place_name = "location"
 camera_name_list = []
@@ -70,15 +70,17 @@ for line in Lines:
     if line_split[0] == "print_timing":
         print_timing = int(line_split[-1].strip())
 
-
+videoClipsHandlerInstances = []
 cap_list = []
 # Load the video
 for cam_num in range(total_cameras):
+
     cap_list.append(cv2.VideoCapture(cam_num))
 
-
 # Creating an instance of videoClipsHandler
-videoClipsHandlerInst = videoClipsHandler(video_dir)
+for i in range(total_cameras):
+    videoClipsHandlerInstances.insert(i,videoClipsHandler(video_dir,camera_name_list[i]))
+
 
 uid_string_place_name = "1717"
 uid_string_camera_name = "1818"
@@ -200,7 +202,7 @@ def main():
         if print_timing:    start = time.process_time()
         ret, frame = cap_list[cam_counter].read()
         if print_timing: Elapsed_time_get_pictue = time.process_time() - start
-        if print_timing:  check = "**************************************Elapsed_time_get_pictue_" + str(i) + " = " + str(Elapsed_time_get_pictue)
+        if print_timing:  check = "**************************************Elapsed_time_get_picture_" + str(i) + " = " + str(Elapsed_time_get_pictue)
         if print_timing:  print(check)
 
         frame_grey = downsize_and_gray_image(frame, 4)
@@ -398,7 +400,7 @@ def main():
                 # append image to clip
                 # frame_grey = downsize_and_gray_image(frame, 2) # not creating a video that can be opened
                 if print_timing:    start = time.process_time()
-                t_writer = threading.Thread(target=videoClipsHandlerInst.thread_write_frame_out(curr_frame[cam_counter]))
+                t_writer = threading.Thread(target=videoClipsHandlerInstances[cam_counter].thread_write_frame_out(curr_frame[cam_counter],cam_counter))
                 if print_timing: Elapsed_time = time.process_time() - start
                 if print_timing:  check = "8888888****************************videoClipsHandlerInst.thread_write_frame_out_" + str(cam_counter) + " = " + str(
                     Elapsed_time)
@@ -414,7 +416,7 @@ def main():
 
         frame_grey = downsize_and_gray_image(curr_frame[cam_counter], 4)
         k = datetime.now()
-        date_time_str = k.strftime('%Y_%m_%d___%H_%M_%S')
+        date_time_str = k.strftime('%H:%M:%S %d/%m/%Y')
 
         ############################################
         rect_data = str(person_count) + rect_data
