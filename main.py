@@ -1,3 +1,5 @@
+#pyinstaller --onefile --paths="C:\Python\Python3.8.8\Lib\site-packages\cv2" main.py
+import os
 import cv2
 import numpy as np
 from ultralytics import YOLO
@@ -5,6 +7,8 @@ from threading import Thread
 import threading
 import os
 
+
+#from Internet_SpeedTest import check_speed
 from VideoClipsRecord import videoClipsHandler
 from send_data_to_app_via_firebase import FirebaseDB
 from datetime import datetime
@@ -18,6 +22,11 @@ THRESHOLD = 0.45
 BLUR_KERNEL = (101, 101)
 
 print_timing = 0
+
+do_internetSpeedCheck = 0
+
+#if do_internetSpeedCheck:
+#    down, up = check_speed()
 
 if print_timing:
     if print_timing:    start = time.process_time()
@@ -69,6 +78,17 @@ for line in Lines:
             camera_name_list.append(line_split[cam_idx+1])
     if line_split[0] == "print_timing":
         print_timing = int(line_split[-1].strip())
+    if line_split[0] == "do_internetSpeedCheck":
+        do_internetSpeedCheck = int(line_split[-1].strip())
+    if line_split[0] == "internet_speed_Low_Mid_High":
+        internet_speed_Low_Mid_High = line_split[-1]  #"Low" or "Mid" or "High"
+
+
+if do_internetSpeedCheck:
+    down, up = check_speed()
+
+
+
 
 videoClipsHandlerInstances = []
 cap_list = []
@@ -91,7 +111,7 @@ while not succeded:
         # Initialize FirebaseDB instance
         firebase_db_Inst = FirebaseDB(config)
         uid_string_place_name = firebase_db_Inst.dataBase_init(firebase_queue_len, place_name, camera_name_list)
-        firebase_db_Inst.user_login(uid_string_place_name, "shlomocohen2@gmail.com", "123456")
+        firebase_db_Inst.user_login(uid_string_place_name, "shlomocohen3@gmail.com", "123456")
         succeded = True
     except Exception as e:
         print(f"Error in Initialize FirebaseDB instance: {e}")
@@ -107,7 +127,7 @@ def downsize_and_gray_image(image, factor,cnvrt_to_grey = 1):
     # Get the original width and height
     original_width, original_height = image.shape[1], image.shape[0]
 
-    print("original_width, original_height = ",original_width, original_height)
+    #print("original_width, original_height = ",original_width, original_height)
 
     # Calculate new width and height as half of the original dimensions
     new_width = int(original_width / factor)  # was 2
@@ -155,6 +175,11 @@ def detect_person(frame):
     return filtered_detections
 
 
+#PC restart
+def restart():
+   os.system("shutdown /r /t 0")
+
+
 def blurring_rectangle(frame, top_left_x, top_left_y, bottom_right_x, bottom_right_y):
 
     subimage = frame[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
@@ -179,6 +204,7 @@ def check_person_distance(bounding_box, LastBoundingBox):
 
 
 def main():
+    error_counter = 0
     # TO ENABLE last image upload to F.B. as empty image from humans
     motion_count_down = []
     motion_count_down = [1 for i in range(total_cameras)]
@@ -192,8 +218,11 @@ def main():
     last_frame = []
     curr_frame = []
     blured_frame = []
+    image_counter = []
     filtered_detections = []
     send_to_Firebase = False
+
+    Last_time_No_Person_in_image = []
 
     LastFiltered_detections = [[0,0,0,0] for i in range(total_cameras)]
     last_found_persons = []
@@ -209,9 +238,13 @@ def main():
         blurred_frame = cv2.GaussianBlur(frame_grey, (21, 21), 0)
         last_frame.insert(i, blurred_frame)
         curr_frame.insert(i, blurred_frame)
+        image_counter.insert(i,0) # create an image counter per camera
         blured_frame.insert(i, blurred_frame)
         last_found_persons.insert(i,0)
         #LastFiltered_detections[i] = [0,0,0,0]  #xywh
+
+        start_time = time.time()
+        Last_time_No_Person_in_image.insert(i, start_time)
 
     # Loop over the frames in the video
     while True:
@@ -231,6 +264,9 @@ def main():
         if print_timing:  print(check)
 
         if not ret:
+            error_counter += 1
+            error_counter = error_counter%300
+            #sendError2Firebase(error_counter, str(cam_counter) + ' : ' + "No image")
             continue
 
         if print_timing:    start = time.process_time()
@@ -252,6 +288,9 @@ def main():
 
         if not bool_image_lit:
             print("Not uploading to firebase. Brightness is too low")
+            error_counter += 1
+            error_counter = error_counter%100
+            #sendError2Firebase(error_counter, str(cam_counter) + ' : ' + "Low light")
             continue
 
         #cv2.imwrite(r'C:\\projects\\check_clips_records\\check_input_to_diff\\last.jpg', last_frame[cam_counter])
@@ -290,19 +329,13 @@ def main():
         #date_time_str = k.strftime('%Y_%m_%d___%H_%M_%S')
         date_time_str = k.strftime('%H:%M:%S  %d/%m/%Y')
 
-        if print_timing: start = time.process_time()
-        cv2.putText(curr_frame[cam_counter], date_time_str,
-                    C_bottomLeftCornerOfText,
-                    C_font,
-                    C_fontScale,
-                    C_fontColor,
-                    C_thickness,
-                    C_lineType)
-        if print_timing: Elapsed_time = time.process_time() - start
-        if print_timing:  check = "44444444****************************cv2.putText_" + str(cam_counter) + " = " + str(
-            Elapsed_time_get_pictue)
-        if print_timing:  print(check)
+        time_split = date_time_str.split(' ')[0].split(':')
 
+
+        #restart the PC every night at 03:07
+        if 2 < int(time_split[0]) < 4 and 6<int(time_split[1])<9:
+            print ("Do Restart")
+            restart()
 
 
 
@@ -333,9 +366,13 @@ def main():
         if len(filtered_detections) > 1: # more than one person
             send_to_Firebase = True      # send anyway
 
-        if last_found_persons[cam_counter] == 1 and len(filtered_detections)==0:
+        if last_found_persons[cam_counter] >= 1 and len(filtered_detections)==0:
             send_to_Firebase = True
+
             last_found_persons[cam_counter] = 0
+            error_counter += 1
+            error_counter = error_counter%100
+            #sendError2Firebase(error_counter, str(cam_counter) + ' : ' + "No Person")
 
 
         # Draw bounding boxes around the filtered detections
@@ -368,10 +405,11 @@ def main():
 
             LastFiltered_detections[cam_counter] = bounding_box
 
-            rect_data += str(top_left_x) + "_" + str(top_left_y) + "_" + str(bottom_right_x) + "_" + str(bottom_right_y) + "_"
+            rect_data += str(int(bounding_box[0])) + "_" + str(int(bounding_box[1])) + "_" + str(int(bounding_box[2])) + "_" + str(int(bounding_box[3])) + "_"
 
             # Draw a rectangle around the detection
-            if print_timing:    start = time.process_time()
+            if print_timing:
+                start = time.process_time()
             cv2.rectangle(curr_frame[cam_counter], (top_left_x, top_left_y), (bottom_right_x, bottom_right_y), (255, 255, 255), 2)
 
             # Print the confidence score of the detection over the screen
@@ -385,7 +423,7 @@ def main():
             # mask person appearance
             # cv2.rectangle(frame, (top_left_x, top_left_y), (bottom_right_x, bottom_right_y), (0, 0, 0), -1)
             curr_frame_shape = curr_frame[cam_counter].shape
-            print(curr_frame_shape)
+            #print(curr_frame_shape)
 
             if print_timing:    start = time.process_time()
             curr_frame[cam_counter] = blurring_rectangle(curr_frame[cam_counter], top_left_x, top_left_y, bottom_right_x, bottom_right_y)
@@ -409,24 +447,32 @@ def main():
             else:
                 pers_count += 1
 
-        image_counter += 1
-        if image_counter > firebase_queue_len:
-            image_counter = 1
-        img_name = str(image_counter) + '.jpg'
+        cv2.putText(curr_frame[cam_counter], date_time_str,
+                    C_bottomLeftCornerOfText,
+                    C_font,
+                    C_fontScale,
+                    C_fontColor,
+                    C_thickness,
+                    C_lineType)
+
+        image_counter[cam_counter] += 1
+        if image_counter[cam_counter] > firebase_queue_len:
+            image_counter[cam_counter] = 1
+        img_name = str(image_counter[cam_counter]) + '.jpg'
 
         frame_grey = downsize_and_gray_image(curr_frame[cam_counter], 4)
         k = datetime.now()
         date_time_str = k.strftime('%H:%M:%S %d/%m/%Y')
 
         ############################################
-        rect_data = str(person_count) + rect_data
+        rect_data = str(person_count) + rect_data[:-1]
 
         #if bool_image_lit and has_motion:
         try:
             if send_to_Firebase == True:
                 frame_grey = downsize_and_gray_image(curr_frame[cam_counter], 4)
                 if print_timing:    start = time.process_time()
-                t_writer = threading.Thread(target=firebase_db_Inst.firebase_admin_upload_np_image_to_storage(frame_grey, img_name, date_time_str, uid_string_place_name, str(cam_counter), rect_data))
+                t_writer = threading.Thread(target=firebase_db_Inst.firebase_admin_upload_np_image_to_storage(frame_grey, img_name, date_time_str, uid_string_place_name, str(cam_counter), rect_data,internet_speed_Low_Mid_High))
                 if print_timing: Elapsed_time = time.process_time() - start
                 if print_timing:  check = "9999999****************************firebase_db_Inst.firebase_admin_upload_np_image_to_storage_" + str(cam_counter) + " = " + str(
                     Elapsed_time_get_pictue)
