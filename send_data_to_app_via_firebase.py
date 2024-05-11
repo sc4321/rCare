@@ -70,6 +70,8 @@ import uuid
 import queue
 import time
 
+debug_images = 1
+
 def generate_uuid_from_string(input_string):
     # Hash the input string using SHA-256
     hashed_string = hashlib.sha256(input_string.encode()).hexdigest()
@@ -140,6 +142,9 @@ class FirebaseDB:
         self.send_images_anyway = False
         self.num_watchers = 1 # was 0
         self.first_time = True
+
+        self.InitializeOnce_updated = False
+
 
 
 
@@ -240,58 +245,141 @@ class FirebaseDB:
             '''
             time.sleep(55 * 60)  # Refresh the token every 40 minutes
 
-    def firebase_admin_upload_np_image_to_storage(self, opencv_image, filename, datetime,uid_string_place_name, camera_name,rect_data):
+    def firebase_admin_upload_np_image_to_storage(self, opencv_image, filename, datetime,uid_string_place_name, camera_name, rect_data, speed,
+                                                  camera_block, camera_block_percentage_top, camera_block_percentage_bottom, width, hight):
 
-        # Convert OpenCV image to bytes
-        _, image_data = cv2.imencode('.jpg', opencv_image)
+        if self.InitializeOnce_updated == False:
+            self.db = self.pyrebase.database()
+            self.db.child('rooms')
 
-        # Create an in-memory binary stream
-        image_stream = io.BytesIO(image_data)
-
-        # Reference to the Firebase Storage bucket
-        firebase_admin_bucket = storage.bucket()
-
-        # Create a blob (file) in the bucket
-        storage_bucket = f'images/'+uid_string_place_name+'/'+camera_name+'/'+filename
-        blob = firebase_admin_bucket.blob(storage_bucket)
-
-        # Upload the image data to the blob
-        blob.upload_from_file(image_stream, content_type='image/jpeg')
-
-        blob.make_public()
-
-        # Get the download URL of the uploaded image
-        download_url = blob.public_url
-
-        self.db = self.pyrebase.database()
-        #self.db.child('cameras').child('96a7ba21-7922-5ed0-aca3-029df2a54cc2')
-        self.db.child('rooms').child(uid_string_place_name).child(camera_name)
-        try:
             self.db.update({
-                'image_data': download_url,
-                'timestamp': datetime,
-                'rect_data': rect_data
-                })
-        except Exception as e:
-            print(f"Error in db.update: {e}")
-        """
-        # try to create a listener
-        if self.first_time:
+                'InternetSpeed': speed
+            })
+
+            if camera_block.strip()=='bottom':
+                block_percentage_bottom = int(camera_block_percentage_bottom.strip())
+                if block_percentage_bottom > 0:
+                    #0_371_790_378_ 790_541_1_537_0_371
+                    btm_up = int(hight*(1-block_percentage_bottom/100))
+                    filter_string = '0_'+str(btm_up)+'_'+str(width)+'_'+str(btm_up)+'_'+str(width)+'_'+str(hight)+'_'+'0_'+str(hight)+'_'+'0_'+str(btm_up)
+                    print('filter_string = ',filter_string)
+
+                    self.db = self.pyrebase.database()
+                    self.db.child('rooms').child(uid_string_place_name).child(camera_name+"_mask")
+                    self.db.update({
+                        '0': filter_string
+                    })
+
+            if camera_block.strip()=='ceiling':
+                block_percentage_bottom = int(camera_block_percentage_top.strip())
+                if block_percentage_bottom > 0:
+                    #0_0_800_0_800_200_0_200_0_0
+                    ceil_dn = int(hight*(block_percentage_bottom/100))
+                    filter_string = '0_0_'+str(width)+'_0_'+str(width)+'_'+str(ceil_dn)+'_'+'0_'+str(ceil_dn)+'_'+'0_0'
+                    print('filter_string = ',filter_string)
+
+                    self.db = self.pyrebase.database()
+                    self.db.child('rooms').child(uid_string_place_name).child(camera_name+"_mask")
+                    self.db.update({
+                        '1': filter_string
+                    })
+
+            if camera_block.strip() == 'both':
+                block_percentage_bottom = int(camera_block_percentage_bottom.strip())
+                if block_percentage_bottom > 0:
+                    # 0_371_790_378_ 790_541_1_537_0_371
+                    btm_up = int(hight * (1 - block_percentage_bottom / 100))
+                    filter_string = '0_' + str(btm_up) + '_' + str(width) + '_' + str(btm_up) + '_' + str(
+                        width) + '_' + str(hight) + '_' + '0_' + str(hight) + '_' + '0_' + str(btm_up)
+                    print('filter_string = ', filter_string)
+
+                    self.db = self.pyrebase.database()
+                    self.db.child('rooms').child(uid_string_place_name).child(camera_name + "_mask")
+                    self.db.update({
+                        '0': filter_string
+                    })
+
+                block_percentage_bottom = int(camera_block_percentage_top.strip())
+                if block_percentage_bottom > 0:
+                    # 0_0_800_0_800_200_0_200_0_0
+                    ceil_dn = int(hight * (block_percentage_bottom / 100))
+                    filter_string = '0_0_' + str(width) + '_0_' + str(width) + '_' + str(ceil_dn) + '_' + '0_' + str(
+                        ceil_dn) + '_' + '0_0'
+                    print('filter_string = ', filter_string)
+
+                    self.db = self.pyrebase.database()
+                    self.db.child('rooms').child(uid_string_place_name).child(camera_name + "_mask")
+                    self.db.update({
+                        '1': filter_string
+                    })
+
+            self.InitializeOnce_updated = True
+
+
+        if speed == "High":
+
+            # Convert OpenCV image to bytes
+            _, image_data = cv2.imencode('.jpg', opencv_image)
+
+            # Create an in-memory binary stream
+            image_stream = io.BytesIO(image_data)
+
+            # Reference to the Firebase Storage bucket
+            firebase_admin_bucket = storage.bucket()
+
+            # Create a blob (file) in the bucket
+            storage_bucket = f'images/'+uid_string_place_name+'/'+camera_name+'/'+filename
+            blob = firebase_admin_bucket.blob(storage_bucket)
+
+            # Upload the image data to the blob
+            blob.upload_from_file(image_stream, content_type='image/jpeg')
+
+            blob.make_public()
+
+            # Get the download URL of the uploaded image
+            download_url = blob.public_url
 
             self.db = self.pyrebase.database()
-            self.db.child('cameras').child('96a7ba21-7922-5ed0-aca3-029df2a54cc2').child('curr_watchers')
-            self.db.stream(self.handler1, token=self.idToken)
+            self.db.child('rooms').child(uid_string_place_name).child(camera_name)
+            if debug_images == 1:
+                download_url_split = download_url.split("/")
+            try:
+                if debug_images==1:
+                    rect_data = rect_data + '_'+ download_url_split[-1]
+                    rect_data = rect_data.split('.')[0]
 
-            #ref_watchers = db.reference('/cameras').child('96a7ba21-7922-5ed0-aca3-029df2a54cc2').child('curr_watchers')
-            #ref_watchers = db.reference('/cameras/96a7ba21-7922-5ed0-aca3-029df2a54cc2')  # /curr_watchers
-            #data = ref_watchers.get()
-            # ref_watchers.listen(self.handler1)
+                self.db.update({
+                    'image_data': download_url,
+                    'timestamp': datetime,
+                    'rect_data': rect_data
+                    })
+            except Exception as e:
+                print(f"Error in db.update: {e}")
+        elif speed=="Low":
+            #upload just rect corners. And an image every 2 hours without persons
 
-            self.first_time = False
-           """
+            self.db = self.pyrebase.database()
+            self.db.child('rooms').child(uid_string_place_name).child(camera_name+'_empty_Img')
+            self.db.update({
+                camera_name + '_empty_Img' : ""
+            })
 
-        #self.db.child('/cameras/96a7ba21-7922-5ed0-aca3-029df2a54cc2/image_data').set(download_url)  #most ulgy line.... but working...
-        #self.db.child('/cameras/96a7ba21-7922-5ed0-aca3-029df2a54cc2/image_data').set(datetime)  #most ulgy line.... but working...
+            self.db = self.pyrebase.database()
+            self.db.child('rooms').child(uid_string_place_name).child(camera_name)
+            if debug_images == 1:
+                download_url_split = download_url.split("/")
+            try:
+                if debug_images == 1:
+                    rect_data = rect_data + '_' + download_url_split[-1]
+                    rect_data = rect_data.split('.')[0]
+
+                self.db.update({
+                    'image_data': download_url,
+                    'timestamp': datetime,
+                    'rect_data': rect_data
+                })
+            except Exception as e:
+                print(f"Error in db.update: {e}")
 
         return download_url
 

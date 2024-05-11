@@ -1,7 +1,12 @@
 show_on_screen 1
-video_dir D:\videos\\
+video_dir C:\projects\check_clips_records\\
 firebase_queue_len 200
-place_name moshe_cohen_room
-total_cameras 2
-camera_name cam_1 cam_2
+place_name Salon_Cohen_Family
+total_cameras 1
+camera_block_bottom_ceiling_both both
+camera_block_percentage 20 20
+camera_name SCcam1 
+cam_2
 print_timing 0
+do_internetSpeedCheck 0
+internet_speed_Low_Mid_High High
