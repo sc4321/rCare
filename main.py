@@ -41,6 +41,10 @@ if print_timing:
     elapsed_time = time.process_time() - start
     print("YOLO upload elapsed_time = ", elapsed_time)
 
+
+# Creating an instance of videoClipsHandler
+#videoClipsHandlerInst = videoClipsHandler(r"C:\\projects\\check_clips_records")
+
 config = {
     "apiKey": "AIzaSyCpWjvONF2eLfIxsFOKSJaM8oU4HvLiW-M",
     "authDomain": "480830608258-hsnsgpgooeov6v0cqdhcn5ba9ccqdg3g.apps.googleusercontent.com",
@@ -317,8 +321,6 @@ def main():
         if print_timing:    start = time.process_time()
         # Detect persons in the frame
 
-        # frame = downsize_and_gray_image(curr_frame[cam_counter], 2, 0)  # 0 -dont convert to grey
-        # filtered_detections = model(frame, classes=[0])  # added [0] to select persons only
 
         filtered_detections = detect_person(curr_frame[cam_counter])
         if print_timing: Elapsed_time = time.process_time() - start
