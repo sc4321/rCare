@@ -22,16 +22,16 @@ C_lineType = 2
 
 
 class videoClipsHandler:
-    def __init__(self, video_clips_path):
+    def __init__(self, video_clips_path, camera_name):
         self.video_clips_path = video_clips_path
         self.list_file_cache = []
-
+        self.camera_name = camera_name.strip()
         self.file_count = 0
         self.get_existing_file_list()
 
         k = datetime.now()
-        date_time_str = k.strftime('%Y_%m_%d___%H_%M_%S')
-        self.output_video = self.video_clips_path + "/" + date_time_str + ".avi"
+        date_time_str = k.strftime('%Y_%m_%d__%H_%M_%S')
+        self.output_video = self.video_clips_path.strip() + self.camera_name +'_'+date_time_str + ".avi"
 
         self.V_Clip_images_counter = 0
         self.fourcc = cv2.VideoWriter_fourcc(*"MJPG")
@@ -52,7 +52,7 @@ class videoClipsHandler:
             pass
 
         print(f"Initializing videoClipsHandler instance with path: {self.video_clips_path}")
-
+    '''
     def start_worker_thread(self):
         if not self.is_running:
             self.is_running = True
@@ -69,7 +69,7 @@ class videoClipsHandler:
             print("Worker thread stopped.")
         else:
             print("Worker thread is not running.")
-
+    '''
 
 
     def get_existing_file_list(self):
@@ -100,9 +100,9 @@ class videoClipsHandler:
         print("deleting_old_clips() -  DONE")
 
 
-    def thread_write_frame_out(self, img, bottomLeftCornerOfText=C_bottomLeftCornerOfText, font=C_font, fontScale=C_fontScale, fontColor=C_fontColor, thickness=C_thickness, lineType=C_lineType):
+    def thread_write_frame_out(self, img, cam_counter, bottomLeftCornerOfText=C_bottomLeftCornerOfText, font=C_font, fontScale=C_fontScale, fontColor=C_fontColor, thickness=C_thickness, lineType=C_lineType):
         k = datetime.now()
-        date_time_str = k.strftime('%Y_%m_%d___%H_%M_%S')
+        date_time_str = k.strftime('%Y_%m_%d__%H_%M_%S')
 
         if self.V_Clip_images_counter >= CLIP_IMAGE_LEN:
             # 1.close old video
@@ -116,7 +116,7 @@ class videoClipsHandler:
 
 
             # 2.create a new video
-            self.output_video = self.video_clips_path + "/" + date_time_str + ".avi"
+            self.output_video = self.video_clips_path.strip() + self.camera_name.strip() + '_' + date_time_str + ".avi"
             #Update clip list:
             self.list_file_cache.append(self.output_video)
 

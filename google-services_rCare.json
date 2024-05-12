@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "480830608258",
+    "firebase_url": "https://remotecare-ce82a-default-rtdb.firebaseio.com",
+    "project_id": "remotecare-ce82a",
+    "storage_bucket": "remotecare-ce82a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480830608258:android:b6ee1fd6fe4e5b53bf759b",
+        "android_client_info": {
+          "package_name": "com.cohen_and_sons.rCare"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "480830608258-hsnsgpgooeov6v0cqdhcn5ba9ccqdg3g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpWjvONF2eLfIxsFOKSJaM8oU4HvLiW-M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "480830608258-hsnsgpgooeov6v0cqdhcn5ba9ccqdg3g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
