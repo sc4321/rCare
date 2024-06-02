@@ -21,7 +21,7 @@ import time
 THRESHOLD = 0.45
 
 # Define the blurring kernel
-BLUR_KERNEL = (101, 101)
+BLUR_KERNEL = (81, 81)  # 101, 101
 
 print_timing = 0
 
@@ -70,7 +70,7 @@ for line in Lines:
     count += 1
     # print("Line{}: {}".format(count, line.strip()))
     print("line =", line)
-    line_split = line.split(" ")
+    line_split = line.strip().split(" ")
     if line_split[0] == "show_on_screen":
         show_on_screen = int(line_split[-1].strip())
     if line_split[0] == "video_dir":
@@ -83,7 +83,7 @@ for line in Lines:
         total_cameras = int(line_split[-1].strip())
     if line_split[0] == "camera_name":
         for cam_idx in range(total_cameras):
-            camera_name_list.append(line_split[cam_idx + 1])
+            camera_name_list.append((line_split[cam_idx + 1]).strip())
     if line_split[0] == "camera_block_percentage":
         for cam_idx in range(total_cameras):
             camera_block_percentage.append(line_split[cam_idx*2 + 1])
@@ -236,6 +236,16 @@ def main():
     filtered_detections = []
     send_to_Firebase = False
 
+    # Add time stamp on images
+    C_font = cv2.FONT_HERSHEY_SIMPLEX
+    C_bottomLeftCornerOfText = (20, 460)
+    C_fontScale = 1.3
+    C_fontColor = (255, 255, 255)
+    C_fontColor_black = (0, 0, 0)
+    C_thickness = 12
+    C_thickness_black = 6
+    C_lineType = 2
+
     Last_time_No_Person_in_image = []
 
     LastFiltered_detections = [[0, 0, 0, 0] for i in range(total_cameras)]
@@ -250,7 +260,7 @@ def main():
         if print_timing:  print(check)
 
         frame_grey = downsize_and_gray_image(frame, 4)
-        blurred_frame = cv2.GaussianBlur(frame_grey, (21, 21), 0)
+        blurred_frame = cv2.GaussianBlur(frame_grey, (17, 17), 0)  #WAS 21,21
         last_frame.insert(i, blurred_frame)
         curr_frame.insert(i, blurred_frame)
         image_counter.insert(i, 0)  # create an image counter per camera
@@ -263,6 +273,10 @@ def main():
 
     # Loop over the frames in the video
     while True:
+        # Get system time
+        k = datetime.now()
+        date_time_str = k.strftime('%H:%M:%S  %d/%m/%Y')
+
         # time.sleep(10)  # delay for lowering rate to Firebase
 
         send_to_Firebase = False
@@ -273,12 +287,12 @@ def main():
 
         if print_timing:    start = time.process_time()
         ret, curr_frame[cam_counter] = cap_list[cam_counter].read()
-        # If the frame is empty, break out of the loop
         if print_timing:  Elapsed_time = time.process_time() - start
         if print_timing:  check = "**************************************Elapsed_time_get_pictue_" + str(
             cam_counter) + " = " + str(Elapsed_time)
         if print_timing:  print(check)
 
+        # If the frame is empty, break out of the loop
         if not ret:
             error_counter += 1
             error_counter = error_counter % 300
@@ -328,13 +342,6 @@ def main():
             Elapsed_time_get_pictue)
         if print_timing:  print(check)
 
-        # Add time stamp on images
-        C_font = cv2.FONT_HERSHEY_SIMPLEX
-        C_bottomLeftCornerOfText = (40, 40)
-        C_fontScale = 1.3
-        C_fontColor = (255, 255, 255)
-        C_thickness = 3
-        C_lineType = 2
 
         k = datetime.now()
         # date_time_str = k.strftime('%Y_%m_%d___%H_%M_%S')
@@ -437,7 +444,7 @@ def main():
             # print(curr_frame_shape)
 
             if print_timing:    start = time.process_time()
-            curr_frame[cam_counter] = blurring_rectangle(curr_frame[cam_counter], top_left_x, top_left_y,
+            blured_frame[cam_counter] = blurring_rectangle(curr_frame[cam_counter], top_left_x, top_left_y,
                                                          bottom_right_x, bottom_right_y)
             if print_timing: Elapsed_time = time.process_time() - start
             if print_timing:  check = "77777777****************************blurring_rectangle_" + str(
@@ -450,6 +457,7 @@ def main():
                 # append image to clip
                 # frame_grey = downsize_and_gray_image(frame, 2) # not creating a video that can be opened
                 if print_timing:    start = time.process_time()
+
                 t_writer = threading.Thread(
                     target=videoClipsHandlerInstances[cam_counter].thread_write_frame_out(curr_frame[cam_counter],
                                                                                           cam_counter))
@@ -458,17 +466,11 @@ def main():
                     cam_counter) + " = " + str(
                     Elapsed_time)
                 if print_timing:  print(check)
-
             else:
                 pers_count += 1
 
-        cv2.putText(curr_frame[cam_counter], date_time_str,
-                    C_bottomLeftCornerOfText,
-                    C_font,
-                    C_fontScale,
-                    C_fontColor,
-                    C_thickness,
-                    C_lineType)
+
+
 
         image_counter[cam_counter] += 1
         if image_counter[cam_counter] > firebase_queue_len:
@@ -476,8 +478,8 @@ def main():
         img_name = str(image_counter[cam_counter]) + '.jpg'
 
         frame_grey = downsize_and_gray_image(curr_frame[cam_counter], 4)
-        k = datetime.now()
-        date_time_str = k.strftime('%H:%M:%S %d/%m/%Y')
+        #k = datetime.now()
+        #date_time_str = k.strftime('%H:%M:%S %d/%m/%Y')
 
         ############################################
         rect_data = str(person_count) + rect_data[:-1]
@@ -485,7 +487,7 @@ def main():
         # if bool_image_lit and has_motion:
         try:
             if send_to_Firebase == True:
-                frame_grey = downsize_and_gray_image(curr_frame[cam_counter], 4)
+                frame_grey = downsize_and_gray_image(blured_frame[cam_counter], 4)
                 width,hight = curr_frame[cam_counter].shape[1], curr_frame[cam_counter].shape[0]
                 if print_timing:    start = time.process_time()
                 t_writer = threading.Thread(
@@ -517,6 +519,23 @@ def main():
             if print_timing:    start = time.process_time()
             # Display the frame
             name = "Cam_" + str(cam_counter)
+
+            cv2.putText(curr_frame[cam_counter], date_time_str,
+                        C_bottomLeftCornerOfText,
+                        C_font,
+                        C_fontScale,
+                        C_fontColor,
+                        C_thickness,
+                        C_lineType)
+
+            cv2.putText(curr_frame[cam_counter], date_time_str,
+                        C_bottomLeftCornerOfText,
+                        C_font,
+                        C_fontScale,
+                        C_fontColor_black,
+                        C_thickness_black,
+                        C_lineType)
+
             cv2.imshow(name, curr_frame[cam_counter])
             if print_timing: Elapsed_time = time.process_time() - start
             if print_timing:  check = "10101010****************************cv2.imshow_" + str(
