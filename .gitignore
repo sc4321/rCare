@@ -1,1 +1,5 @@
 /firebase-adminsdk-serviceAccount.json
+/__pycache__/send_data_to_app_via_firebase.cpython-38.pyc
+/__pycache__/VideoClipsRecord.cpython-38.pyc
+/production/__pycache__/send_data_to_app_via_firebase.cpython-38.pyc
+/production/__pycache__/VideoClipsRecord.cpython-38.pyc
