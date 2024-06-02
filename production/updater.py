@@ -8,8 +8,8 @@ import stat  # Import the stat module
 import platform
 
 # Replace with your actual GitHub repository URL
-repo_url = "https://api.github.com/sc4321/rCare/upload/main/production"
-repo_cloning_url = "https://github.com/sc4321/rCare/upload/main/production.git"
+repo_url = "https://api.github.com/repos/sc4321/rCare"
+repo_cloning_url = "https://github.com/sc4321/rCare/tree/main/production"
 
 # Last update file path
 last_update_file = "last_updated_time.txt"
@@ -59,7 +59,7 @@ def check_for_update():
         try:
             response = requests.get(repo_url + "/releases/latest")
             if response.status_code == REQUEST_HAS_SUCCEEDED:
-                latest_version_tag_name = response.json()["tag_name"]
+                latest_version_tag_name = response.json()["tag_name"]  # should be a number
 
                 # Read current version from version.txt
                 try:
