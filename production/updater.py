@@ -7,15 +7,20 @@ import shutil
 import stat  # Import the stat module
 import platform
 
-# Replace with your actual GitHub repository URL
-repo_url = "https://api.github.com/sc4321/rCare/upload/main/production"
-repo_cloning_url = "https://github.com/sc4321/rCare/upload/main/production.git"
+# GitHub repository URL
+repo_url = "https://api.github.com/repos/sc4321/rCare"
+repo_cloning_url = "https://github.com/sc4321/rCare.git"
 
 # Last update file path
-last_update_file = "last_updated_time.txt"
-CLONED_FOLDER_PATH = "./updated_project"
+LAST_UPDATE_FILE = "last_updated_time.txt"
+CLONED_FOLDER_PATH = ".//updated_project//"
+TMP_FOLDER = r"c:/tmp/rCare/"
+BACKUP_FOLDER = ".//production_back//"
+START_COPY_VERSION_FILE_NAME = "version_start_copy.txt"
+END_COPY_VERSION_FILE_NAME = "version_end_copy.txt"
+
 # Update check interval (in days)
-update_interval = 1
+UPDATE_INTERVAL = 1
 
 # Magic numbers:
 REQUEST_HAS_SUCCEEDED = 200
@@ -23,22 +28,27 @@ RETRIES_FOR_INTERNET_FAILURE = 5
 RETRIES_FOR_CLONING_FAILURE = 5
 
 
+# PC restart
+def PC_restart():
+    os.system("shutdown /r /t 0")
+
+
 def get_last_update_time():
-    if not os.path.exists(last_update_file):
+    if not os.path.exists(LAST_UPDATE_FILE):
         # Create the last update file (without writing anything initially)
-        with open(last_update_file, "w") as f:
+        with open(LAST_UPDATE_FILE, "w") as f:
             f.write(str(datetime.now()))
         return None
 
     try:
         # Read last update time from file
-        with open(last_update_file, "r") as f:
+        with open(LAST_UPDATE_FILE, "r") as f:
             last_update_str = f.readline().strip()
             return datetime.strptime(last_update_str, "%Y-%m-%d %H:%M:%S.%f")  # Parse with millisecond precision
     except (FileNotFoundError, ValueError):
         # Handle errors: create empty file or invalid format
         print(f"Error reading last update file. Creating new file.")
-        with open(last_update_file, "w") as f:
+        with open(LAST_UPDATE_FILE, "w") as f:
             f.write(str(datetime.now()))
         return None
 
@@ -48,23 +58,51 @@ def check_for_update():
     if last_update_time is None:
         return  # Handle error getting last update time
 
+    current_version_start = 0.0
+    current_version_end = 0.0
+
     # Check if the last update was more than a day ago
-    # if datetime.now() - last_update_time < timedelta(days=update_interval): # todo
-    if datetime.now() - last_update_time < timedelta(seconds=update_interval):
+    # if datetime.now() - last_update_time < timedelta(days=UPDATE_INTERVAL): # todo
+    if datetime.now() - last_update_time < timedelta(seconds=UPDATE_INTERVAL):
         print("Last update was within the last day. Skipping update check.")
         return
+
+    with open(START_COPY_VERSION_FILE_NAME, "r") as f_start:
+        try:
+            current_version_start = float(f_start.readline().strip())
+        except:
+            current_version_start = 0.0
+
+    with open(END_COPY_VERSION_FILE_NAME, "r") as f_end:
+        try:
+            current_version_end = float(f_end.readline().strip())
+        except:
+            current_version_end = 0.0
+
+    if current_version_end != current_version_start:
+        # restore the last valid copy if worse comes to worse
+        string_cmd = "cp -rf " + BACKUP_FOLDER + " " + "."
+        os.system(string_cmd)
+
+        exit(0)
 
     max_retries = RETRIES_FOR_INTERNET_FAILURE  # Set the maximum number of retries for request.get
     for attempt in range(1, max_retries + 1):
         try:
             response = requests.get(repo_url + "/releases/latest")
             if response.status_code == REQUEST_HAS_SUCCEEDED:
-                latest_version_tag_name = response.json()["tag_name"]
+                latest_version_tag_name = response.json()["tag_name"]  # should be a number
 
-                # Read current version from version.txt
+                # Read current version :
+                # todo we have already current_version_start field, why all these try except???@@@@@@@@@@@@@@@@@@@@@@@@@@
                 try:
-                    with open("version.txt", "r") as f:
-                        current_version = float(f.readline().strip())
+                    with open(START_COPY_VERSION_FILE_NAME, "r") as f:
+                        try:
+                            current_version = float(f.readline().strip())
+                            if current_version < 0.0 or current_version > 10000:
+                                current_version = 0.0
+                        except:
+                            current_version = 0.0
                 except FileNotFoundError:
                     # No version file, assume no previous version
                     current_version = 0.0
@@ -86,23 +124,46 @@ def update_script(latest_version):
     max_retries = RETRIES_FOR_CLONING_FAILURE  # Set the maximum number of retries for cloning
     for attempt in range(1, max_retries + 1):
         try:
-            delete_folder_safely(CLONED_FOLDER_PATH)
-            subprocess.run(["git", "clone", "--depth=1", repo_cloning_url, CLONED_FOLDER_PATH], check=True)
-
-            # Replace existing files with updated versions
-            shutil.copy2(os.path.join(CLONED_FOLDER_PATH, "the_functionality.py"), ".")
-            # shutil.copy2(os.path.join(CLONED_FOLDER_PATH, "updater.py"), ".")  # todo uncomment after updating github
+            delete_folder_safely(TMP_FOLDER)
+            err = subprocess.run(["git", "clone", "--depth=1", repo_cloning_url, TMP_FOLDER], check=True).stderr
 
             # Update version file with latest version
-            with open("version.txt", "w") as f:
+            with open(START_COPY_VERSION_FILE_NAME, "w") as f:
                 f.write(latest_version)
 
+            # save a copy if worse comes to worse
+            # shutil.copytree(".", "BACKUP_FOLDER")
+
+            string_cmd = "cp -rf " + ". " + BACKUP_FOLDER
+            os.system(string_cmd)
+
+            # todo changed from !=, as None means successfully cloned
+            # todo: do the if in try except, and if 5 times failed - copy again from backup folder at lowermost else @@@@
+            if err is None:
+                # Replace existing files with updated versions
+                shutil.copy2(os.path.join(TMP_FOLDER, "main.py"), ".")
+                shutil.copy2(os.path.join(TMP_FOLDER, "VideoClipsRecord.py"), ".")
+                shutil.copy2(os.path.join(TMP_FOLDER, "send_data_to_app_via_firebase.py"), ".")
+                # shutil.copy2(os.path.join(TMP_FOLDER, "yolov8l.pt"), ".")  # todo create new repo
+                shutil.copy2(os.path.join(TMP_FOLDER, "config.txt"), ".")
+                # shutil.copy2(os.path.join(TMP_FOLDER, "updater.py"), ".")  # todo uncomment after updating github
+
+                # Update version file with latest version
+                with open(END_COPY_VERSION_FILE_NAME, "w") as f:
+                    f.write(latest_version)
+
+            else:
+                print("Error occoured in updating last version")
+
+            # todo it shouldnt update file after "else" happened - if shutil.copy above didnt work out, insert into if...
+            # todo or maybe, a break at else should happen
+
             # Update last update time after successful execution
-            with open(last_update_file, "w") as f:
+            with open(LAST_UPDATE_FILE, "w") as f:
                 f.write(str(datetime.now()))
 
             print("Successfully updated project from GitHub!")
-            delete_folder_safely(CLONED_FOLDER_PATH)
+            delete_folder_safely(TMP_FOLDER)
             break  # Exit loop on successful cloning
         except subprocess.CalledProcessError as e:
             print(f"Attempt {attempt}/{max_retries}: Error cloning repository: {e}")
@@ -115,16 +176,13 @@ def delete_folder_safely(folder_path):
     if not os.path.exists(folder_path):
         return  # no folder preventing cloning success
     try:
-        shutil.rmtree(folder_path, ignore_errors=False)
-    except PermissionError as e:
-        print(f"Permission error encountered: {e}")
         if platform.system() == "Windows":
             change_permissions_recursive_windows(folder_path)  # Change permissions to writable for Windows
         else:
             change_permissions_recursive(folder_path, stat.S_IWRITE)  # Change permissions to writable for Unix
-        shutil.rmtree(folder_path, ignore_errors=False)  # Retry deletion
-    except OSError as e:
-        raise OSError(f"Error deleting folder: {folder_path}") from e
+        shutil.rmtree(folder_path, ignore_errors=False)
+    except PermissionError as e:
+        print(f"error encountered: {e}")
     print(f"Successfully deleted folder: {folder_path}")
 
 
