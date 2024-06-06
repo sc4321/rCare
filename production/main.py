@@ -15,17 +15,22 @@ from send_data_to_app_via_firebase import FirebaseDB
 from datetime import datetime
 import time
 
+import consts
+
+
 # from compute_ssi_diff import compute_ssi_diff
 
 # Define the threshold
 THRESHOLD = 0.45
 
 # Define the blurring kernel
-BLUR_KERNEL = (81, 81)  # 101, 101
+BLUR_KERNEL = (31, 31)  # 101, 101  / 81,81
 
 print_timing = 0
 
 do_internetSpeedCheck = 0
+
+do_restart_PC_Once = 0
 
 # if do_internetSpeedCheck:
 #    down, up = check_speed()
@@ -126,6 +131,7 @@ while not succeded:
         firebase_db_Inst = FirebaseDB(config)
         uid_string_place_name = firebase_db_Inst.dataBase_init(firebase_queue_len, place_name, camera_name_list)
         firebase_db_Inst.user_login(uid_string_place_name, "shlomocohen3@gmail.com", "123456")
+        #firebase_db_Inst.user_login(uid_string_place_name, "google_tester@gmail.com", "123456")
         succeded = True
     except Exception as e:
         print(f"Error in Initialize FirebaseDB instance: {e}")
@@ -196,6 +202,7 @@ def restart():
 
 
 def blurring_rectangle(frame, top_left_x, top_left_y, bottom_right_x, bottom_right_y):
+    #new_frame = frame.copy()
     subimage = frame[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
     blurred_subimage = cv2.GaussianBlur(subimage, BLUR_KERNEL, 0)
     frame[top_left_y:bottom_right_y, top_left_x:bottom_right_x] = blurred_subimage
@@ -237,14 +244,16 @@ def main():
     send_to_Firebase = False
 
     # Add time stamp on images
+    '''
     C_font = cv2.FONT_HERSHEY_SIMPLEX
     C_bottomLeftCornerOfText = (20, 460)
     C_fontScale = 1.3
     C_fontColor = (255, 255, 255)
     C_fontColor_black = (0, 0, 0)
-    C_thickness = 12
-    C_thickness_black = 6
+    C_thickness_8 = 8
+    C_thickness_4 = 4
     C_lineType = 2
+    '''
 
     Last_time_No_Person_in_image = []
 
@@ -276,8 +285,12 @@ def main():
         # Get system time
         k = datetime.now()
         date_time_str = k.strftime('%H:%M:%S  %d/%m/%Y')
+        time_split = date_time_str.split(' ')[0].split(':')
 
-        # time.sleep(10)  # delay for lowering rate to Firebase
+        # restart the PC every night at 03:07
+        if 2 < int(time_split[0]) < 4 and 6 < int(time_split[1]) < 12:
+            print("Do Restart")
+            restart()
 
         send_to_Firebase = False
 
@@ -342,33 +355,6 @@ def main():
             Elapsed_time_get_pictue)
         if print_timing:  print(check)
 
-
-        k = datetime.now()
-        # date_time_str = k.strftime('%Y_%m_%d___%H_%M_%S')
-        date_time_str = k.strftime('%H:%M:%S  %d/%m/%Y')
-
-        time_split = date_time_str.split(' ')[0].split(':')
-
-        # restart the PC every night at 03:07
-        if 2 < int(time_split[0]) < 4 and 6 < int(time_split[1]) < 9:
-            print("Do Restart")
-            restart()
-
-        '''
-        # If no detections were found, rotate the image and try again
-        if len(filtered_detections) == 0:
-            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-            filtered_detections = detect_person(frame)
-
-        if len(filtered_detections) == 0:
-            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-            frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
-            filtered_detections = detect_person(frame)
-            # no persons found in 3 direction
-            if len(filtered_detections) == 0:
-                continue
-        '''
-
         # if found person in image: try not to stop show until no person are in image
         motion_count_down[cam_counter] = 2
 
@@ -389,6 +375,7 @@ def main():
             error_counter = error_counter % 100
             # sendError2Firebase(error_counter, str(cam_counter) + ' : ' + "No Person")
 
+        blured_frame[cam_counter] = curr_frame[cam_counter].copy()
         # Draw bounding boxes around the filtered detections
         for detection in filtered_detections:
             confidence_score = detection[1]
@@ -425,11 +412,11 @@ def main():
             # Draw a rectangle around the detection
             if print_timing:
                 start = time.process_time()
-            cv2.rectangle(curr_frame[cam_counter], (top_left_x, top_left_y), (bottom_right_x, bottom_right_y),
+            cv2.rectangle(blured_frame[cam_counter], (top_left_x, top_left_y), (bottom_right_x, bottom_right_y),
                           (255, 255, 255), 2)
 
             # Print the confidence score of the detection over the screen
-            cv2.putText(curr_frame[cam_counter], f"{confidence_score:.2f}", (top_left_x, top_left_y - 20),
+            cv2.putText(blured_frame[cam_counter], f"{confidence_score:.2f}", (top_left_x, top_left_y - 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
 
             if print_timing: Elapsed_time = time.process_time() - start
@@ -444,7 +431,7 @@ def main():
             # print(curr_frame_shape)
 
             if print_timing:    start = time.process_time()
-            blured_frame[cam_counter] = blurring_rectangle(curr_frame[cam_counter], top_left_x, top_left_y,
+            blured_frame[cam_counter] = blurring_rectangle(blured_frame[cam_counter], top_left_x, top_left_y,
                                                          bottom_right_x, bottom_right_y)
             if print_timing: Elapsed_time = time.process_time() - start
             if print_timing:  check = "77777777****************************blurring_rectangle_" + str(
@@ -477,7 +464,7 @@ def main():
             image_counter[cam_counter] = 1
         img_name = str(image_counter[cam_counter]) + '.jpg'
 
-        frame_grey = downsize_and_gray_image(curr_frame[cam_counter], 4)
+        frame_grey_4_video = downsize_and_gray_image(curr_frame[cam_counter], 4)
         #k = datetime.now()
         #date_time_str = k.strftime('%H:%M:%S %d/%m/%Y')
 
@@ -491,7 +478,7 @@ def main():
                 width,hight = curr_frame[cam_counter].shape[1], curr_frame[cam_counter].shape[0]
                 if print_timing:    start = time.process_time()
                 t_writer = threading.Thread(
-                    target=firebase_db_Inst.firebase_admin_upload_np_image_to_storage(frame_grey, img_name,
+                    target=firebase_db_Inst.firebase_admin_upload_np_image_to_storage(person_count,frame_grey, img_name,
                                                                                       date_time_str,
                                                                                       uid_string_place_name,
                                                                                       str(cam_counter), rect_data,
@@ -520,23 +507,23 @@ def main():
             # Display the frame
             name = "Cam_" + str(cam_counter)
 
-            cv2.putText(curr_frame[cam_counter], date_time_str,
-                        C_bottomLeftCornerOfText,
-                        C_font,
-                        C_fontScale,
-                        C_fontColor,
-                        C_thickness,
-                        C_lineType)
+            cv2.putText(blured_frame[cam_counter], date_time_str,
+                        consts.C_bottomLeftCornerOfText,
+                        consts.C_font,
+                        consts.C_fontScale,
+                        consts.C_fontColor_black,
+                        consts.C_thickness_8,
+                        consts.C_lineType)
 
-            cv2.putText(curr_frame[cam_counter], date_time_str,
-                        C_bottomLeftCornerOfText,
-                        C_font,
-                        C_fontScale,
-                        C_fontColor_black,
-                        C_thickness_black,
-                        C_lineType)
+            cv2.putText(blured_frame[cam_counter], date_time_str,
+                        consts.C_bottomLeftCornerOfText,
+                        consts.C_font,
+                        consts.C_fontScale,
+                        consts.C_fontColor,
+                        consts.C_thickness_4,
+                        consts.C_lineType)
 
-            cv2.imshow(name, curr_frame[cam_counter])
+            cv2.imshow(name, blured_frame[cam_counter])
             if print_timing: Elapsed_time = time.process_time() - start
             if print_timing:  check = "10101010****************************cv2.imshow_" + str(
                 cam_counter) + " = " + str(Elapsed_time_get_pictue)
