@@ -64,6 +64,8 @@ from firebase_admin import credentials, storage, db, auth
 import hashlib
 import uuid
 
+import consts
+
 
 #from firebase_listener import FirebaseDBListener
 
@@ -169,7 +171,7 @@ class FirebaseDB:
 
         data = {
             "Queue_len": str(Queue_len),
-            "camera_name_list": res
+            "camera_name_list": res   #.strip()  todo is strip needed ?
         }
         self.db = self.pyrebase.database()
         self.db.child('config')
@@ -245,8 +247,26 @@ class FirebaseDB:
             '''
             time.sleep(55 * 60)  # Refresh the token every 40 minutes
 
-    def firebase_admin_upload_np_image_to_storage(self, opencv_image, filename, datetime,uid_string_place_name, camera_name, rect_data, speed,
+    def firebase_admin_upload_np_image_to_storage(self, person_count, opencv_image, filename, datetime,uid_string_place_name, camera_name, rect_data, speed,
                                                   camera_block, camera_block_percentage_top, camera_block_percentage_bottom, width, hight):
+
+        '''cv2.putText(opencv_image, datetime,
+                    consts.C_bottomLeftCornerOfText_small,
+                    consts.C_font,
+                    consts.C_fontScale/4,
+                    consts.C_fontColor_black,
+                    consts.C_thickness_8,
+                    consts.C_lineType)
+        '''
+        if person_count>0:
+            cv2.putText(opencv_image, datetime,
+                        consts.C_bottomLeftCornerOfText_small,
+                        consts.C_font,
+                        0.4, #consts.C_fontScale/4,
+                        consts.C_fontColor,
+                        1, #consts.C_thickness_4/4,
+                        consts.C_lineType)
+
 
         if self.InitializeOnce_updated == False:
             self.db = self.pyrebase.database()

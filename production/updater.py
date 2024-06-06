@@ -137,7 +137,7 @@ def update_script(latest_version):
             string_cmd = "cp -rf " + ". " + BACKUP_FOLDER
             os.system(string_cmd)
 
-            # todo changed from !=, as None means successfully cloned
+
             # todo: do the if in try except, and if 5 times failed - copy again from backup folder at lowermost else @@@@
             if err is None:
                 # Replace existing files with updated versions
@@ -147,6 +147,8 @@ def update_script(latest_version):
                 # shutil.copy2(os.path.join(TMP_FOLDER, "yolov8l.pt"), ".")  # todo create new repo
                 shutil.copy2(os.path.join(TMP_FOLDER, "config.txt"), ".")
                 # shutil.copy2(os.path.join(TMP_FOLDER, "updater.py"), ".")  # todo uncomment after updating github
+
+                # todo test updater update itself
 
                 # Update version file with latest version
                 with open(END_COPY_VERSION_FILE_NAME, "w") as f:
