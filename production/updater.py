@@ -29,8 +29,8 @@ RETRIES_FOR_CLONING_FAILURE = 5
 
 
 # PC restart
-def PC_restart():
-    os.system("shutdown /r /t 0")
+# def PC_restart():
+#    os.system("shutdown /r /t 0")
 
 
 def get_last_update_time():
@@ -93,31 +93,26 @@ def check_for_update():
             if response.status_code == REQUEST_HAS_SUCCEEDED:
                 latest_version_tag_name = response.json()["tag_name"]  # should be a number
 
-                # Read current version :
-                # todo we have already current_version_start field, why all these try except???@@@@@@@@@@@@@@@@@@@@@@@@@@
-                try:
-                    with open(START_COPY_VERSION_FILE_NAME, "r") as f:
-                        try:
-                            current_version = float(f.readline().strip())
-                            if current_version < 0.0 or current_version > 10000:
-                                current_version = 0.0
-                        except:
-                            current_version = 0.0
-                except FileNotFoundError:
-                    # No version file, assume no previous version
-                    current_version = 0.0
-
                 # Compare versions (assuming version.txt stores a float)
-                if float(latest_version_tag_name) > current_version:
+                if float(latest_version_tag_name) > current_version_start:
                     update_script(latest_version_tag_name)
                 else:
-                    print(f"Already on latest version: {current_version}")
+                    print(f"Already on latest version: {current_version_start}")
                 break  # Exit loop on successful request
         except requests.exceptions.RequestException as e:
             print(f"Attempt {attempt}/{max_retries}: Error fetching update info: {e}")
             time.sleep(2 ** attempt)  # Exponential backoff between retries
     else:
         print("Failed to retrieve update information after retries.")
+
+
+def copy_files(source_path):
+    shutil.copy2(os.path.join(source_path, "main.py"), ".")
+    shutil.copy2(os.path.join(source_path, "VideoClipsRecord.py"), ".")
+    shutil.copy2(os.path.join(source_path, "send_data_to_app_via_firebase.py"), ".")
+    # shutil.copy2(os.path.join(source_path, "yolov8l.pt"), ".")  # todo create new repo
+    shutil.copy2(os.path.join(source_path, "config.txt"), ".")
+    # shutil.copy2(os.path.join(source_path, "updater.py"), ".")  # todo uncomment after updating github
 
 
 def update_script(latest_version):
@@ -135,18 +130,13 @@ def update_script(latest_version):
             # shutil.copytree(".", "BACKUP_FOLDER")
 
             string_cmd = "cp -rf " + ". " + BACKUP_FOLDER
+            # todo rethink add thread
             os.system(string_cmd)
-
 
             # todo: do the if in try except, and if 5 times failed - copy again from backup folder at lowermost else @@@@
             if err is None:
                 # Replace existing files with updated versions
-                shutil.copy2(os.path.join(TMP_FOLDER, "main.py"), ".")
-                shutil.copy2(os.path.join(TMP_FOLDER, "VideoClipsRecord.py"), ".")
-                shutil.copy2(os.path.join(TMP_FOLDER, "send_data_to_app_via_firebase.py"), ".")
-                # shutil.copy2(os.path.join(TMP_FOLDER, "yolov8l.pt"), ".")  # todo create new repo
-                shutil.copy2(os.path.join(TMP_FOLDER, "config.txt"), ".")
-                # shutil.copy2(os.path.join(TMP_FOLDER, "updater.py"), ".")  # todo uncomment after updating github
+                copy_files(TMP_FOLDER)
 
                 # todo test updater update itself
 
@@ -154,24 +144,23 @@ def update_script(latest_version):
                 with open(END_COPY_VERSION_FILE_NAME, "w") as f:
                     f.write(latest_version)
 
+                # Update last update time after successful execution
+                with open(LAST_UPDATE_FILE, "w") as f:
+                    f.write(str(datetime.now()))
+
+                print("Successfully updated project from GitHub!")
+                delete_folder_safely(TMP_FOLDER)
+                break  # Exit loop on successful cloning
+
             else:
                 print("Error occoured in updating last version")
 
-            # todo it shouldnt update file after "else" happened - if shutil.copy above didnt work out, insert into if...
-            # todo or maybe, a break at else should happen
-
-            # Update last update time after successful execution
-            with open(LAST_UPDATE_FILE, "w") as f:
-                f.write(str(datetime.now()))
-
-            print("Successfully updated project from GitHub!")
-            delete_folder_safely(TMP_FOLDER)
-            break  # Exit loop on successful cloning
         except subprocess.CalledProcessError as e:
             print(f"Attempt {attempt}/{max_retries}: Error cloning repository: {e}")
             time.sleep(2 ** attempt)  # Exponential backoff between retries
     else:
         print("Failed to clone the updated project after retries.")
+        copy_files(BACKUP_FOLDER)
 
 
 def delete_folder_safely(folder_path):

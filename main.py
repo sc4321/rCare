@@ -445,8 +445,27 @@ def main():
                 # frame_grey = downsize_and_gray_image(frame, 2) # not creating a video that can be opened
                 if print_timing:    start = time.process_time()
 
+                timed_curr_frame = curr_frame[cam_counter].copy()
+                cv2.putText(timed_curr_frame, date_time_str,
+                            consts.C_bottomLeftCornerOfText,
+                            consts.C_font,
+                            consts.C_fontScale,
+                            consts.C_fontColor_black,
+                            consts.C_thickness_8,
+                            consts.C_lineType)
+
+                cv2.putText(timed_curr_frame, date_time_str,
+                            consts.C_bottomLeftCornerOfText,
+                            consts.C_font,
+                            consts.C_fontScale,
+                            consts.C_fontColor,
+                            consts.C_thickness_4,
+                            consts.C_lineType)
+
+
+
                 t_writer = threading.Thread(
-                    target=videoClipsHandlerInstances[cam_counter].thread_write_frame_out(curr_frame[cam_counter],
+                    target=videoClipsHandlerInstances[cam_counter].thread_write_frame_out(timed_curr_frame,
                                                                                           cam_counter))
                 if print_timing: Elapsed_time = time.process_time() - start
                 if print_timing:  check = "8888888****************************videoClipsHandlerInst.thread_write_frame_out_" + str(
@@ -474,6 +493,23 @@ def main():
         # if bool_image_lit and has_motion:
         try:
             if send_to_Firebase == True:
+
+                cv2.putText(blured_frame[cam_counter], date_time_str,
+                            consts.C_bottomLeftCornerOfText,
+                            consts.C_font,
+                            consts.C_fontScale,
+                            consts.C_fontColor_black,
+                            consts.C_thickness_8,
+                            consts.C_lineType)
+
+                cv2.putText(blured_frame[cam_counter], date_time_str,
+                            consts.C_bottomLeftCornerOfText,
+                            consts.C_font,
+                            consts.C_fontScale,
+                            consts.C_fontColor,
+                            consts.C_thickness_4,
+                            consts.C_lineType)
+
                 frame_grey = downsize_and_gray_image(blured_frame[cam_counter], 4)
                 width,hight = curr_frame[cam_counter].shape[1], curr_frame[cam_counter].shape[0]
                 if print_timing:    start = time.process_time()
@@ -503,10 +539,6 @@ def main():
 
         if show_on_screen:
 
-            if print_timing:    start = time.process_time()
-            # Display the frame
-            name = "Cam_" + str(cam_counter)
-
             cv2.putText(blured_frame[cam_counter], date_time_str,
                         consts.C_bottomLeftCornerOfText,
                         consts.C_font,
@@ -522,6 +554,10 @@ def main():
                         consts.C_fontColor,
                         consts.C_thickness_4,
                         consts.C_lineType)
+
+            if print_timing:    start = time.process_time()
+            # Display the frame
+            name = "Cam_" + str(cam_counter)
 
             cv2.imshow(name, blured_frame[cam_counter])
             if print_timing: Elapsed_time = time.process_time() - start

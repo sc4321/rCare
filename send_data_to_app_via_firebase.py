@@ -258,6 +258,8 @@ class FirebaseDB:
                     consts.C_thickness_8,
                     consts.C_lineType)
         '''
+
+        '''
         if person_count>0:
             cv2.putText(opencv_image, datetime,
                         consts.C_bottomLeftCornerOfText_small,
@@ -266,7 +268,7 @@ class FirebaseDB:
                         consts.C_fontColor,
                         1, #consts.C_thickness_4/4,
                         consts.C_lineType)
-
+        '''
 
         if self.InitializeOnce_updated == False:
             self.db = self.pyrebase.database()
