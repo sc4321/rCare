@@ -62,7 +62,7 @@ def check_for_update():
     current_version_end = 0.0
 
     # Check if the last update was more than a day ago
-    # if datetime.now() - last_update_time < timedelta(days=UPDATE_INTERVAL): # todo
+    # if datetime.now() - last_update_time < timedelta(days=UPDATE_INTERVAL): # todo change @@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if datetime.now() - last_update_time < timedelta(seconds=UPDATE_INTERVAL):
         print("Last update was within the last day. Skipping update check.")
         return
@@ -79,11 +79,11 @@ def check_for_update():
         except:
             current_version_end = 0.0
 
+    # todo check if below is working @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if current_version_end != current_version_start:
         # restore the last valid copy if worse comes to worse
         string_cmd = "cp -rf " + BACKUP_FOLDER + " " + "."
         os.system(string_cmd)
-
         exit(0)
 
     max_retries = RETRIES_FOR_INTERNET_FAILURE  # Set the maximum number of retries for request.get
@@ -93,7 +93,7 @@ def check_for_update():
             if response.status_code == REQUEST_HAS_SUCCEEDED:
                 latest_version_tag_name = response.json()["tag_name"]  # should be a number
 
-                # Compare versions (assuming version.txt stores a float)
+                # Compare versions (assuming current_version_start stores a float)
                 if float(latest_version_tag_name) > current_version_start:
                     update_script(latest_version_tag_name)
                 else:
@@ -110,9 +110,10 @@ def copy_files(source_path):
     shutil.copy2(os.path.join(source_path, "main.py"), ".")
     shutil.copy2(os.path.join(source_path, "VideoClipsRecord.py"), ".")
     shutil.copy2(os.path.join(source_path, "send_data_to_app_via_firebase.py"), ".")
-    # shutil.copy2(os.path.join(source_path, "yolov8l.pt"), ".")  # todo create new repo
     shutil.copy2(os.path.join(source_path, "config.txt"), ".")
     # shutil.copy2(os.path.join(source_path, "updater.py"), ".")  # todo uncomment after updating github
+
+    # shutil.copy2(os.path.join(source_path, "yolov8l.pt"), ".")  # todo create new repo
 
 
 def update_script(latest_version):
@@ -129,16 +130,14 @@ def update_script(latest_version):
             # save a copy if worse comes to worse
             # shutil.copytree(".", "BACKUP_FOLDER")
 
+            # todo validate @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             string_cmd = "cp -rf " + ". " + BACKUP_FOLDER
             # todo rethink add thread
             os.system(string_cmd)
 
-            # todo: do the if in try except, and if 5 times failed - copy again from backup folder at lowermost else @@@@
             if err is None:
                 # Replace existing files with updated versions
                 copy_files(TMP_FOLDER)
-
-                # todo test updater update itself
 
                 # Update version file with latest version
                 with open(END_COPY_VERSION_FILE_NAME, "w") as f:
