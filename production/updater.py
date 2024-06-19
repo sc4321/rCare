@@ -116,8 +116,8 @@ def copy_files(source_path):
     shutil.copy2(os.path.join(source_path, "send_data_to_app_via_firebase.py"), ".")
     shutil.copy2(os.path.join(source_path, "config.txt"), ".")
     shutil.copy2(os.path.join(source_path, "consts.py"), ".")
-    shutil.copy2(os.path.join(source_path, "yolov8l.pt"), ".")  # todo create new repo
-    # shutil.copy2(os.path.join(source_path, "updater.py"), ".")  # todo uncomment after updating github
+    shutil.copy2(os.path.join(source_path, "yolov8l.pt"), ".")
+    shutil.copy2(os.path.join(source_path, "updater.py"), ".")
 
 
 
