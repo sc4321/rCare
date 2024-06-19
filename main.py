@@ -24,7 +24,7 @@ import consts
 THRESHOLD = 0.45
 
 # Define the blurring kernel
-BLUR_KERNEL = (31, 31)  # 101, 101  / 81,81
+BLUR_KERNEL = (61, 61)  # 101, 101  / 81,81
 
 print_timing = 0
 
@@ -290,7 +290,7 @@ def main():
         # restart the PC every night at 03:07
         if 2 < int(time_split[0]) < 4 and 6 < int(time_split[1]) < 12:
             print("Do Restart")
-            restart()
+            ### restart() #################################################### TEMPORARY removed for debugging android
 
         send_to_Firebase = False
 
@@ -546,6 +546,9 @@ def main():
                         consts.C_fontColor_black,
                         consts.C_thickness_8,
                         consts.C_lineType)
+
+
+
 
             cv2.putText(blured_frame[cam_counter], date_time_str,
                         consts.C_bottomLeftCornerOfText,

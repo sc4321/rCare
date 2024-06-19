@@ -107,13 +107,18 @@ def check_for_update():
 
 
 def copy_files(source_path):
+    shutil.copy2(os.path.join(source_path, "version_start_copy.txt"), ".")
+    shutil.copy2(os.path.join(source_path, "version_end_copy.txt"), ".")
+    shutil.copy2(os.path.join(source_path, "last_updated_time.txt"), ".")
     shutil.copy2(os.path.join(source_path, "main.py"), ".")
+    shutil.copy2(os.path.join(source_path, "run.bat"), ".")
     shutil.copy2(os.path.join(source_path, "VideoClipsRecord.py"), ".")
     shutil.copy2(os.path.join(source_path, "send_data_to_app_via_firebase.py"), ".")
     shutil.copy2(os.path.join(source_path, "config.txt"), ".")
+    shutil.copy2(os.path.join(source_path, "consts.py"), ".")
+    shutil.copy2(os.path.join(source_path, "yolov8l.pt"), ".")  # todo create new repo
     # shutil.copy2(os.path.join(source_path, "updater.py"), ".")  # todo uncomment after updating github
 
-    # shutil.copy2(os.path.join(source_path, "yolov8l.pt"), ".")  # todo create new repo
 
 
 def update_script(latest_version):
@@ -132,6 +137,17 @@ def update_script(latest_version):
 
             # todo validate @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
             string_cmd = "cp -rf " + ". " + BACKUP_FOLDER
+
+            print("save a copy if worse comes to worse = ", string_cmd)
+
+            # todo - generate start version --only-- after creating the backup folder,
+            #  else start version would get a new version, a backupfolder might not create due to crush,
+            #  than the program would run again, would do a check of start and end version,
+            #  then it would would find its not equal => would try to load data from backup,
+            #  back currently there is no backup - so boom crush.
+            # with try catch, that only if the try to create backup folder succeeded,
+            # than and only than the start version is created
+
             # todo rethink add thread
             os.system(string_cmd)
 
