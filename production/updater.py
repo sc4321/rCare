@@ -13,9 +13,9 @@ repo_cloning_url = "https://github.com/sc4321/rCare.git"
 
 # Last update file path
 LAST_UPDATE_FILE = "last_updated_time.txt"
-CLONED_FOLDER_PATH = ".//updated_project//"
+CLONED_FOLDER_PATH = "./updated_project"
 TMP_FOLDER = r"c:/tmp/rCare/"
-BACKUP_FOLDER = ".//production_back//"
+BACKUP_FOLDER = "./production_back"
 START_COPY_VERSION_FILE_NAME = "version_start_copy.txt"
 END_COPY_VERSION_FILE_NAME = "version_end_copy.txt"
 
@@ -82,7 +82,7 @@ def check_for_update():
     # todo check if below is working @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if current_version_end != current_version_start:
         # restore the last valid copy if worse comes to worse
-        string_cmd = "cp -rf " + BACKUP_FOLDER + " " + "."
+        string_cmd = "cp -f " + BACKUP_FOLDER + " " + "."
         os.system(string_cmd)
         exit(0)
 
@@ -136,7 +136,7 @@ def update_script(latest_version):
             # shutil.copytree(".", "BACKUP_FOLDER")
 
             # todo validate @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-            string_cmd = "cp -rf " + ". " + BACKUP_FOLDER
+            string_cmd = "cp -f " + ". " + BACKUP_FOLDER
 
             print("save a copy if worse comes to worse = ", string_cmd)
 
